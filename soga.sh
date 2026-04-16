@@ -6,7 +6,7 @@ yellow='\033[0;33m'
 plain='\033[0m'
 
 version="v1.0.0"
-install_script_url="${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/xdaidai666/soga/main}/install.sh"
+install_script_url="${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/Xdaidai666/soga/main}/install.sh"
 
 [[ $EUID -ne 0 ]] && echo -e "${red}错误: ${plain} 必须使用 root 用户运行此脚本！\n" && exit 1
 
@@ -253,10 +253,10 @@ show_log() {
 }
 
 update_shell() {
-    wget -O /usr/bin/soga -N --no-check-certificate "${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/xdaidai666/soga/main}/soga.sh"
+    wget -O /usr/bin/soga -N --no-check-certificate "${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/Xdaidai666/soga/main}/soga.sh"
     if [[ $? != 0 ]]; then
         echo ""
-        echo -e "${red}下载脚本失败，请检查本机能否连接到 ${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/xdaidai666/soga/main}${plain}"
+        echo -e "${red}下载脚本失败，请检查本机能否连接到 ${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/Xdaidai666/soga/main}${plain}"
         before_show_menu
     else
         chmod +x /usr/bin/soga

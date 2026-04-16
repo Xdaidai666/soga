@@ -7,7 +7,7 @@ plain='\033[0m'
 
 cur_dir=$(pwd)
 fixed_version="2.13.7"
-download_base_url="${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/xdaidai666/soga/main}"
+download_base_url="${SOGA_INSTALL_BASE_URL:-https://raw.githubusercontent.com/Xdaidai666/soga/main}"
 package_name="soga-2.13.7-linux-amd64.tar.gz"
 package_sha256="d8466d6cf8c075857d2ff7480e4a9092bedd1b7d7ba3d77886fdc375bbc6e4a0"
 package_url="${download_base_url}/${package_name}"
