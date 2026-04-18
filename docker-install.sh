@@ -14,6 +14,67 @@ package_url="${base_url}/soga-2.13.7-linux-amd64.tar.gz"
 package_sha256="d8466d6cf8c075857d2ff7480e4a9092bedd1b7d7ba3d77886fdc375bbc6e4a0"
 install_dir="${SOGA_DOCKER_INSTALL_DIR:-/opt/soga-docker}"
 image_name="${SOGA_DOCKER_IMAGE:-ghcr.io/xdaidai666/soga:2.13.7}"
+config_file_rel="data/soga.conf"
+
+declare -a config_overrides=()
+
+show_help() {
+    cat <<EOF
+soga docker installer
+supported environment: Linux amd64 only
+fixed version: ${fixed_version}
+
+usage:
+  bash docker-install.sh
+  bash docker-install.sh --set key=value [--set key=value ...]
+
+examples:
+  bash docker-install.sh \\
+    --set type=v2board \\
+    --set server_type=v2ray \\
+    --set node_id=1 \\
+    --set soga_key=your_soga_key \\
+    --set api=webapi \\
+    --set webapi_url=https://www.example.com/ \\
+    --set webapi_key=your_webapi_key \\
+    --set cert_file=/etc/soga/fullchain.pem \\
+    --set key_file=/etc/soga/privkey.pem
+
+optional env overrides:
+  SOGA_DOCKER_IMAGE
+  SOGA_DOCKER_INSTALL_DIR
+  SOGA_DOCKER_BASE_URL
+
+config override env format:
+  SOGA_CFG_TYPE=v2board
+  SOGA_CFG_SERVER_TYPE=v2ray
+  SOGA_CFG_NODE_ID=1
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --set)
+            [[ $# -ge 2 ]] || { echo -e "${red}错误：${plain} --set 需要 key=value 参数"; exit 1; }
+            config_overrides+=("$2")
+            shift 2
+            ;;
+        --set=*)
+            config_overrides+=("${1#--set=}")
+            shift
+            ;;
+        *)
+            echo -e "${red}错误：${plain} 不支持的参数 $1"
+            echo
+            show_help
+            exit 1
+            ;;
+    esac
+done
 
 [[ $EUID -ne 0 ]] && echo -e "${red}错误：${plain} 必须使用 root 用户运行此脚本！\n" && exit 1
 
@@ -74,10 +135,51 @@ extract_if_missing "soga/routes.toml" "${install_dir}/data/routes.toml"
 
 rm -f "${tmp_tar}"
 
+collect_env_config_overrides() {
+    local var_name key value
+    while IFS= read -r var_name; do
+        key="$(printf '%s' "${var_name#SOGA_CFG_}" | tr 'A-Z' 'a-z')"
+        value="${!var_name}"
+        config_overrides+=("${key}=${value}")
+    done < <(compgen -A variable SOGA_CFG_ | sort)
+}
+
+escape_sed_replacement() {
+    printf '%s' "$1" | sed -e 's/[&~]/\\&/g'
+}
+
+set_config_value() {
+    local key="$1"
+    local value="$2"
+    local escaped_value
+    escaped_value="$(escape_sed_replacement "${value}")"
+
+    if grep -q "^${key}=" "${install_dir}/${config_file_rel}"; then
+        sed -i "s~^${key}=.*~${key}=${escaped_value}~" "${install_dir}/${config_file_rel}"
+    else
+        printf '\n%s=%s\n' "${key}" "${value}" >> "${install_dir}/${config_file_rel}"
+    fi
+}
+
+apply_config_overrides() {
+    local pair key value
+    collect_env_config_overrides
+
+    for pair in "${config_overrides[@]}"; do
+        [[ "${pair}" == *=* ]] || { echo -e "${red}错误：${plain} 非法配置参数 ${pair}，必须使用 key=value"; exit 1; }
+        key="${pair%%=*}"
+        value="${pair#*=}"
+        [[ -n "${key}" ]] || { echo -e "${red}错误：${plain} 非法配置参数 ${pair}"; exit 1; }
+        set_config_value "${key}" "${value}"
+    done
+}
+
+apply_config_overrides
+
 read_config_value() {
     local key="$1"
     local value
-    value="$(sed -n "s/^${key}=//p" "${install_dir}/data/soga.conf" | head -n 1 | tr -d '\r')"
+    value="$(sed -n "s/^${key}=//p" "${install_dir}/${config_file_rel}" | head -n 1 | tr -d '\r')"
     printf '%s' "${value}"
 }
 
@@ -148,7 +250,10 @@ if config_is_ready; then
     echo "  cd ${install_dir}/docker && docker compose logs -f soga"
 else
     echo "请先编辑配置文件："
-    echo "  ${install_dir}/data/soga.conf"
+    echo "  ${install_dir}/${config_file_rel}"
+    echo
+    echo "或者重新运行并带上命令行参数，例如："
+    echo "  bash docker-install.sh --set type=v2board --set server_type=v2ray --set node_id=1 --set soga_key=your_key ..."
     echo
     echo "配置填好后执行："
     echo "  cd ${install_dir}/docker && SOGA_DOCKER_IMAGE=${image_name} docker compose pull && SOGA_DOCKER_IMAGE=${image_name} docker compose up -d"
