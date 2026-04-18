@@ -101,8 +101,33 @@ mkdir -p "${install_dir}/docker" "${install_dir}/data"
 download_file() {
     local url="$1"
     local output="$2"
+    local mode="${3:-silent}"
     echo -e "下载: ${yellow}${url}${plain}"
-    curl -LfsS "${url}" -o "${output}"
+
+    if [[ "${mode}" == "progress" ]]; then
+        curl \
+            --fail \
+            --location \
+            --retry 3 \
+            --retry-delay 2 \
+            --connect-timeout 15 \
+            --speed-time 30 \
+            --speed-limit 1024 \
+            --progress-bar \
+            "${url}" \
+            -o "${output}"
+    else
+        curl \
+            --fail \
+            --location \
+            --retry 3 \
+            --retry-delay 2 \
+            --connect-timeout 15 \
+            --silent \
+            --show-error \
+            "${url}" \
+            -o "${output}"
+    fi
 }
 
 download_file "${docker_base_url}/docker-compose.yml" "${install_dir}/docker/docker-compose.yml"
@@ -110,7 +135,8 @@ download_file "${docker_manager_url}" "${docker_manager_path}"
 chmod +x "${docker_manager_path}"
 
 tmp_tar="$(mktemp)"
-download_file "${package_url}" "${tmp_tar}"
+echo -e "${yellow}安装包约 19MB，GitHub Raw 较慢时会显示进度条，请稍等...${plain}"
+download_file "${package_url}" "${tmp_tar}" "progress"
 
 if command -v sha256sum >/dev/null 2>&1; then
     actual_sha256="$(sha256sum "${tmp_tar}" | awk '{print $1}')"
