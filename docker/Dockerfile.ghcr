@@ -3,7 +3,9 @@ FROM debian:12-slim
 ENV TZ=Asia/Shanghai
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates tzdata \
+    && apt-get install -y --no-install-recommends ca-certificates curl openssl socat tzdata \
+    && curl https://get.acme.sh | sh \
+    && /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt \
     && rm -rf /var/lib/apt/lists/*
 
 COPY soga-2.13.7-linux-amd64.tar.gz /tmp/
