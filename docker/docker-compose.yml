@@ -1,0 +1,12 @@
+services:
+  soga:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: soga
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/etc/soga
