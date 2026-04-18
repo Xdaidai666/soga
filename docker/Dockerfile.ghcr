@@ -1,0 +1,24 @@
+FROM debian:12-slim
+
+ENV TZ=Asia/Shanghai
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY soga-2.13.7-linux-amd64.tar.gz /tmp/
+
+RUN tar -xzf /tmp/soga-2.13.7-linux-amd64.tar.gz -C /tmp \
+    && mkdir -p /usr/local/soga /etc/soga \
+    && cp -a /tmp/soga/. /usr/local/soga/ \
+    && cp -f /usr/local/soga/blockList /etc/soga/blockList \
+    && cp -f /usr/local/soga/whiteList /etc/soga/whiteList \
+    && cp -f /usr/local/soga/dns.yml /etc/soga/dns.yml \
+    && cp -f /usr/local/soga/routes.toml /etc/soga/routes.toml \
+    && cp -f /usr/local/soga/soga.conf /etc/soga/soga.conf \
+    && chmod +x /usr/local/soga/soga \
+    && rm -rf /tmp/soga /tmp/soga-2.13.7-linux-amd64.tar.gz
+
+WORKDIR /usr/local/soga
+
+CMD ["/usr/local/soga/soga", "-c", "/etc/soga/soga.conf"]
