@@ -1,8 +1,6 @@
 services:
   soga:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${SOGA_DOCKER_IMAGE:-ghcr.io/xdaidai666/soga:2.13.7}
     container_name: soga
     restart: unless-stopped
     network_mode: host

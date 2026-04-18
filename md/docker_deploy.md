@@ -1,4 +1,4 @@
-# Soga Docker 部署说明
+# Soga Docker 镜像部署说明
 
 ## 适用环境
 - 仅支持 `Linux amd64`
@@ -7,12 +7,11 @@
 - 当前 `docker-compose.yml` 使用 `host` 网络模式，因此仅适合 Linux 服务器
 
 ## 文件位置
-- [Dockerfile](C:/Users/16570/Desktop/soga/docker/Dockerfile)
-- [entrypoint.sh](C:/Users/16570/Desktop/soga/docker/entrypoint.sh)
 - [docker-compose.yml](C:/Users/16570/Desktop/soga/docker/docker-compose.yml)
+- [docker-install.sh](C:/Users/16570/Desktop/soga/docker-install.sh)
 
-## 一键拉取 Docker 部署目录
-如果不想手动上传 `docker/` 目录，可以直接在服务器执行：
+## 一键拉取 Docker 镜像部署目录
+服务器可直接执行：
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/Xdaidai666/soga/main/docker-install.sh)
@@ -30,20 +29,33 @@ bash <(curl -Ls https://raw.githubusercontent.com/Xdaidai666/soga/main/docker-in
 
 其中 `data/soga.conf` 会自动从安装包解出默认模板，等你自己填写。
 
-## 部署方式
-如果你是手动上传了 `docker/` 目录，进入 `docker` 目录后执行：
-
-```bash
-docker compose up -d --build
-```
-
-首次启动时，如果 `./data/soga.conf` 不存在，容器会自动复制默认模板到：
+## 自定义镜像地址
+默认镜像名是：
 
 ```text
-./data/soga.conf
+ghcr.io/xdaidai666/soga:2.13.7
 ```
 
-然后容器会退出，并提示你先填写配置。
+如果你换了镜像地址，可以这样指定：
+
+```bash
+SOGA_DOCKER_IMAGE=你的镜像地址 bash <(curl -Ls https://raw.githubusercontent.com/Xdaidai666/soga/main/docker-install.sh)
+```
+
+## 部署方式
+编辑配置文件：
+
+```bash
+nano /opt/soga-docker/data/soga.conf
+```
+
+进入部署目录后执行：
+
+```bash
+cd /opt/soga-docker/docker
+docker compose pull
+docker compose up -d
+```
 
 ## 配置文件
 容器内配置目录固定映射为：
@@ -55,7 +67,7 @@ docker compose up -d --build
 宿主机对应目录：
 
 ```text
-./data
+/opt/soga-docker/data
 ```
 
 会自动准备这些文件：
@@ -65,27 +77,29 @@ docker compose up -d --build
 - `dns.yml`
 - `routes.toml`
 
-## 启动命令
-配置完成后重新启动：
-
-```bash
-docker compose up -d
-```
-
+## 常用命令
 查看日志：
 
 ```bash
+cd /opt/soga-docker/docker
 docker compose logs -f soga
 ```
 
 停止：
 
 ```bash
+cd /opt/soga-docker/docker
 docker compose down
+```
+
+重启：
+
+```bash
+cd /opt/soga-docker/docker
+docker compose restart
 ```
 
 ## 说明
 - 这套 Docker 方案不会自动下发证书
-- 如果你的 `soga.conf` 需要证书，请自行把证书文件放到 `./data` 中，并在配置里填写对应路径
-- 当前镜像会从 GitHub Raw 下载固定安装包：
-  - `https://raw.githubusercontent.com/Xdaidai666/soga/main/soga-2.13.7-linux-amd64.tar.gz`
+- 如果你的 `soga.conf` 需要证书，请自行把证书文件放到 `/opt/soga-docker/data` 中，并在配置里填写对应路径
+- 这套方案是“拉镜像运行”，不再需要用户本地 `docker build`

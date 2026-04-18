@@ -13,6 +13,7 @@ docker_base_url="${base_url}/docker"
 package_url="${base_url}/soga-2.13.7-linux-amd64.tar.gz"
 package_sha256="d8466d6cf8c075857d2ff7480e4a9092bedd1b7d7ba3d77886fdc375bbc6e4a0"
 install_dir="${SOGA_DOCKER_INSTALL_DIR:-/opt/soga-docker}"
+image_name="${SOGA_DOCKER_IMAGE:-ghcr.io/xdaidai666/soga:2.13.7}"
 
 [[ $EUID -ne 0 ]] && echo -e "${red}错误：${plain} 必须使用 root 用户运行此脚本！\n" && exit 1
 
@@ -41,8 +42,6 @@ download_file() {
     curl -LfsS "${url}" -o "${output}"
 }
 
-download_file "${docker_base_url}/Dockerfile" "${install_dir}/docker/Dockerfile"
-download_file "${docker_base_url}/entrypoint.sh" "${install_dir}/docker/entrypoint.sh"
 download_file "${docker_base_url}/docker-compose.yml" "${install_dir}/docker/docker-compose.yml"
 
 tmp_tar="$(mktemp)"
@@ -75,17 +74,16 @@ extract_if_missing "soga/routes.toml" "${install_dir}/data/routes.toml"
 
 rm -f "${tmp_tar}"
 
-chmod +x "${install_dir}/docker/entrypoint.sh"
-
 echo
-echo -e "${green}Docker 部署目录已准备完成${plain}"
+echo -e "${green}Docker 镜像部署目录已准备完成${plain}"
 echo "目录: ${install_dir}"
+echo "镜像: ${image_name}"
 echo
 echo "请先编辑配置文件："
 echo "  ${install_dir}/data/soga.conf"
 echo
-echo "配置完成后启动："
-echo "  cd ${install_dir}/docker && docker compose up -d --build"
+echo "拉取镜像并启动："
+echo "  cd ${install_dir}/docker && SOGA_DOCKER_IMAGE=${image_name} docker compose pull && SOGA_DOCKER_IMAGE=${image_name} docker compose up -d"
 echo
 echo "查看日志："
 echo "  cd ${install_dir}/docker && docker compose logs -f soga"
