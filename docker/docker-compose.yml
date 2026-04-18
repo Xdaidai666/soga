@@ -7,4 +7,4 @@ services:
     environment:
       TZ: Asia/Shanghai
     volumes:
-      - ./data:/etc/soga
+      - ../data:/etc/soga
