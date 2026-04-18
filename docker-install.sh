@@ -10,8 +10,6 @@ plain='\033[0m'
 fixed_version="2.13.7"
 base_url="${SOGA_DOCKER_BASE_URL:-https://raw.githubusercontent.com/Xdaidai666/soga/main}"
 docker_base_url="${base_url}/docker"
-package_url="${base_url}/soga-2.13.7-linux-amd64.tar.gz"
-package_sha256="d8466d6cf8c075857d2ff7480e4a9092bedd1b7d7ba3d77886fdc375bbc6e4a0"
 install_dir="${SOGA_DOCKER_INSTALL_DIR:-/opt/soga-docker}"
 image_name="${SOGA_DOCKER_IMAGE:-ghcr.io/xdaidai666/soga:2.13.7}"
 config_file_rel="data/soga.conf"
@@ -134,36 +132,93 @@ download_file "${docker_base_url}/docker-compose.yml" "${install_dir}/docker/doc
 download_file "${docker_manager_url}" "${docker_manager_path}"
 chmod +x "${docker_manager_path}"
 
-tmp_tar="$(mktemp)"
-echo -e "${yellow}安装包约 19MB，GitHub Raw 较慢时会显示进度条，请稍等...${plain}"
-download_file "${package_url}" "${tmp_tar}" "progress"
-
-if command -v sha256sum >/dev/null 2>&1; then
-    actual_sha256="$(sha256sum "${tmp_tar}" | awk '{print $1}')"
-    if [[ "${actual_sha256}" != "${package_sha256}" ]]; then
-        echo -e "${red}安装包校验失败${plain}"
-        echo "期望: ${package_sha256}"
-        echo "实际: ${actual_sha256}"
-        rm -f "${tmp_tar}"
-        exit 1
-    fi
-fi
-
-extract_if_missing() {
-    local src="$1"
+write_if_missing() {
     local dst="$2"
     if [[ ! -f "${dst}" ]]; then
-        tar -xOzf "${tmp_tar}" "${src}" > "${dst}"
+        cat > "${dst}"
     fi
 }
 
-extract_if_missing "soga/soga.conf" "${install_dir}/data/soga.conf"
-extract_if_missing "soga/blockList" "${install_dir}/data/blockList"
-extract_if_missing "soga/whiteList" "${install_dir}/data/whiteList"
-extract_if_missing "soga/dns.yml" "${install_dir}/data/dns.yml"
-extract_if_missing "soga/routes.toml" "${install_dir}/data/routes.toml"
+write_if_missing ignored "${install_dir}/data/soga.conf" <<'EOF'
+# 基础配置
+type=
+server_type=
+node_id=
+soga_key=
 
-rm -f "${tmp_tar}"
+# webapi 或 db 对接任选一个
+api=
+
+# webapi 对接信息
+webapi_url=
+webapi_key=
+
+# db 对接信息
+db_host=
+db_port=
+db_name=
+db_user=
+db_password=
+
+# 手动证书配置
+cert_file=
+key_file=
+
+# 自动证书配置
+cert_mode=
+cert_domain=
+cert_key_length=ec-256
+dns_provider=
+
+# proxy protocol 中转配置
+proxy_protocol=false
+udp_proxy_protocol=false
+
+# 全局限制用户 IP 数配置
+redis_enable=
+redis_addr=
+redis_password=
+redis_db=
+conn_limit_expiry=
+
+# 动态限速配置
+dy_limit_enable=
+dy_limit_duration=
+dy_limit_trigger_time=
+dy_limit_trigger_speed=
+dy_limit_speed=
+dy_limit_time=
+dy_limit_white_user_id=
+
+# 其它杂项
+user_conn_limit=
+user_speed_limit=
+user_tcp_limit=
+node_speed_limit=
+
+check_interval=
+submit_interval=
+forbidden_bit_torrent=
+log_level=
+
+# 更多配置项请看文档根据需求自行添加
+EOF
+
+write_if_missing ignored "${install_dir}/data/blockList" <<'EOF'
+# 每行一个审计规则
+EOF
+
+write_if_missing ignored "${install_dir}/data/whiteList" <<'EOF'
+# 每行一个规则
+EOF
+
+write_if_missing ignored "${install_dir}/data/dns.yml" <<'EOF'
+# dns配置
+EOF
+
+write_if_missing ignored "${install_dir}/data/routes.toml" <<'EOF'
+# 出站路由配置，默认本机出站，无需配置
+EOF
 
 collect_env_config_overrides() {
     local var_name key value
