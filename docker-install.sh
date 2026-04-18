@@ -15,6 +15,8 @@ package_sha256="d8466d6cf8c075857d2ff7480e4a9092bedd1b7d7ba3d77886fdc375bbc6e4a0
 install_dir="${SOGA_DOCKER_INSTALL_DIR:-/opt/soga-docker}"
 image_name="${SOGA_DOCKER_IMAGE:-ghcr.io/xdaidai666/soga:2.13.7}"
 config_file_rel="data/soga.conf"
+docker_manager_url="${base_url}/soga-docker.sh"
+docker_manager_path="/usr/bin/soga-docker"
 
 declare -a config_overrides=()
 
@@ -104,6 +106,8 @@ download_file() {
 }
 
 download_file "${docker_base_url}/docker-compose.yml" "${install_dir}/docker/docker-compose.yml"
+download_file "${docker_manager_url}" "${docker_manager_path}"
+chmod +x "${docker_manager_path}"
 
 tmp_tar="$(mktemp)"
 download_file "${package_url}" "${tmp_tar}"
@@ -240,6 +244,7 @@ echo
 echo -e "${green}Docker 镜像部署目录已准备完成${plain}"
 echo "目录: ${install_dir}"
 echo "镜像: ${image_name}"
+echo "管理命令: soga-docker"
 echo
 if config_is_ready; then
     start_container_stack
@@ -247,7 +252,7 @@ if config_is_ready; then
     echo -e "${green}Docker 容器已启动${plain}"
     echo
     echo "查看日志："
-    echo "  cd ${install_dir}/docker && docker compose logs -f soga"
+    echo "  soga-docker log"
 else
     echo "请先编辑配置文件："
     echo "  ${install_dir}/${config_file_rel}"
@@ -255,9 +260,12 @@ else
     echo "或者重新运行并带上命令行参数，例如："
     echo "  bash docker-install.sh --set type=v2board --set server_type=v2ray --set node_id=1 --set soga_key=your_key ..."
     echo
+    echo "安装完成后，也可以直接用命令管理："
+    echo "  soga-docker --set type=v2board --set server_type=v2ray --set node_id=1 --set soga_key=your_key ..."
+    echo
     echo "配置填好后执行："
-    echo "  cd ${install_dir}/docker && SOGA_DOCKER_IMAGE=${image_name} docker compose pull && SOGA_DOCKER_IMAGE=${image_name} docker compose up -d"
+    echo "  soga-docker start"
     echo
     echo "查看日志："
-    echo "  cd ${install_dir}/docker && docker compose logs -f soga"
+    echo "  soga-docker log"
 fi
