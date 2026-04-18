@@ -99,33 +99,18 @@ mkdir -p "${install_dir}/docker" "${install_dir}/data"
 download_file() {
     local url="$1"
     local output="$2"
-    local mode="${3:-silent}"
     echo -e "下载: ${yellow}${url}${plain}"
 
-    if [[ "${mode}" == "progress" ]]; then
-        curl \
-            --fail \
-            --location \
-            --retry 3 \
-            --retry-delay 2 \
-            --connect-timeout 15 \
-            --speed-time 30 \
-            --speed-limit 1024 \
-            --progress-bar \
-            "${url}" \
-            -o "${output}"
-    else
-        curl \
-            --fail \
-            --location \
-            --retry 3 \
-            --retry-delay 2 \
-            --connect-timeout 15 \
-            --silent \
-            --show-error \
-            "${url}" \
-            -o "${output}"
-    fi
+    curl \
+        --fail \
+        --location \
+        --retry 3 \
+        --retry-delay 2 \
+        --connect-timeout 15 \
+        --silent \
+        --show-error \
+        "${url}" \
+        -o "${output}"
 }
 
 download_file "${docker_base_url}/docker-compose.yml" "${install_dir}/docker/docker-compose.yml"
