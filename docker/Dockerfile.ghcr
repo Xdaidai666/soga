@@ -4,8 +4,9 @@ ENV HOME=/root
 ENV TZ=Asia/Shanghai
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl openssl socat tzdata \
-    && curl https://get.acme.sh | sh \
+    && apt-get install -y --no-install-recommends ca-certificates curl git openssl socat tzdata \
+    && git clone --depth 1 https://github.com/acmesh-official/acme.sh.git /root/.acme.sh \
+    && chmod +x /root/.acme.sh/acme.sh \
     && /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt \
     && rm -rf /var/lib/apt/lists/*
 
