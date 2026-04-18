@@ -74,16 +74,85 @@ extract_if_missing "soga/routes.toml" "${install_dir}/data/routes.toml"
 
 rm -f "${tmp_tar}"
 
+read_config_value() {
+    local key="$1"
+    local value
+    value="$(sed -n "s/^${key}=//p" "${install_dir}/data/soga.conf" | head -n 1 | tr -d '\r')"
+    printf '%s' "${value}"
+}
+
+config_is_ready() {
+    local type_value server_type_value node_id_value soga_key_value api_value
+    local cert_file_value key_file_value cert_mode_value cert_domain_value
+
+    type_value="$(read_config_value "type")"
+    server_type_value="$(read_config_value "server_type")"
+    node_id_value="$(read_config_value "node_id")"
+    soga_key_value="$(read_config_value "soga_key")"
+    api_value="$(read_config_value "api")"
+    cert_file_value="$(read_config_value "cert_file")"
+    key_file_value="$(read_config_value "key_file")"
+    cert_mode_value="$(read_config_value "cert_mode")"
+    cert_domain_value="$(read_config_value "cert_domain")"
+
+    [[ -n "${type_value}" ]] || return 1
+    [[ -n "${server_type_value}" ]] || return 1
+    [[ -n "${node_id_value}" ]] || return 1
+    [[ -n "${soga_key_value}" ]] || return 1
+    [[ -n "${api_value}" ]] || return 1
+
+    if [[ "${api_value}" == "webapi" ]]; then
+        [[ -n "$(read_config_value "webapi_url")" ]] || return 1
+        [[ -n "$(read_config_value "webapi_key")" ]] || return 1
+    elif [[ "${api_value}" == "db" ]]; then
+        [[ -n "$(read_config_value "db_host")" ]] || return 1
+        [[ -n "$(read_config_value "db_port")" ]] || return 1
+        [[ -n "$(read_config_value "db_name")" ]] || return 1
+        [[ -n "$(read_config_value "db_user")" ]] || return 1
+        [[ -n "$(read_config_value "db_password")" ]] || return 1
+    else
+        return 1
+    fi
+
+    if [[ -n "${cert_mode_value}" ]]; then
+        [[ -n "${cert_domain_value}" ]] || return 1
+    else
+        [[ -n "${cert_file_value}" ]] || return 1
+        [[ -n "${key_file_value}" ]] || return 1
+    fi
+
+    return 0
+}
+
+start_container_stack() {
+    echo
+    echo -e "${yellow}检测到配置已填写，开始自动拉取并启动 Docker 容器...${plain}"
+    (
+        cd "${install_dir}/docker"
+        SOGA_DOCKER_IMAGE="${image_name}" docker compose pull
+        SOGA_DOCKER_IMAGE="${image_name}" docker compose up -d
+    )
+}
+
 echo
 echo -e "${green}Docker 镜像部署目录已准备完成${plain}"
 echo "目录: ${install_dir}"
 echo "镜像: ${image_name}"
 echo
-echo "请先编辑配置文件："
-echo "  ${install_dir}/data/soga.conf"
-echo
-echo "拉取镜像并启动："
-echo "  cd ${install_dir}/docker && SOGA_DOCKER_IMAGE=${image_name} docker compose pull && SOGA_DOCKER_IMAGE=${image_name} docker compose up -d"
-echo
-echo "查看日志："
-echo "  cd ${install_dir}/docker && docker compose logs -f soga"
+if config_is_ready; then
+    start_container_stack
+    echo
+    echo -e "${green}Docker 容器已启动${plain}"
+    echo
+    echo "查看日志："
+    echo "  cd ${install_dir}/docker && docker compose logs -f soga"
+else
+    echo "请先编辑配置文件："
+    echo "  ${install_dir}/data/soga.conf"
+    echo
+    echo "配置填好后执行："
+    echo "  cd ${install_dir}/docker && SOGA_DOCKER_IMAGE=${image_name} docker compose pull && SOGA_DOCKER_IMAGE=${image_name} docker compose up -d"
+    echo
+    echo "查看日志："
+    echo "  cd ${install_dir}/docker && docker compose logs -f soga"
+fi
