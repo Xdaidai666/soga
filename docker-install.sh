@@ -255,17 +255,12 @@ read_config_value() {
 
 config_is_ready() {
     local type_value server_type_value node_id_value soga_key_value api_value
-    local cert_file_value key_file_value cert_mode_value cert_domain_value
 
     type_value="$(read_config_value "type")"
     server_type_value="$(read_config_value "server_type")"
     node_id_value="$(read_config_value "node_id")"
     soga_key_value="$(read_config_value "soga_key")"
     api_value="$(read_config_value "api")"
-    cert_file_value="$(read_config_value "cert_file")"
-    key_file_value="$(read_config_value "key_file")"
-    cert_mode_value="$(read_config_value "cert_mode")"
-    cert_domain_value="$(read_config_value "cert_domain")"
 
     [[ -n "${type_value}" ]] || return 1
     [[ -n "${server_type_value}" ]] || return 1
@@ -284,13 +279,6 @@ config_is_ready() {
         [[ -n "$(read_config_value "db_password")" ]] || return 1
     else
         return 1
-    fi
-
-    if [[ -n "${cert_mode_value}" ]]; then
-        [[ -n "${cert_domain_value}" ]] || return 1
-    else
-        [[ -n "${cert_file_value}" ]] || return 1
-        [[ -n "${key_file_value}" ]] || return 1
     fi
 
     return 0
